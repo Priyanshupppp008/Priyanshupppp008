@@ -1,0 +1,121 @@
+import pygame
+import random
+
+# Initialize pygame
+pygame.init()
+
+# Screen dimensions
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+
+# Colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+
+# Set up the screen
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Breakout")
+
+# Paddle class
+class Paddle(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface([100, 10])
+        self.image.fill(BLUE)
+        self.rect = self.image.get_rect()
+        self.rect.x = (SCREEN_WIDTH // 2) - (self.rect.width // 2)
+        self.rect.y = SCREEN_HEIGHT - 20
+
+    def update(self):
+        pos = pygame.mouse.get_pos()
+        self.rect.x = pos[0] - self.rect.width // 2
+
+# Ball class
+class Ball(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface([10, 10])
+        self.image.fill(RED)
+        self.rect = self.image.get_rect()
+        self.rect.x = SCREEN_WIDTH // 2
+        self.rect.y = SCREEN_HEIGHT // 2
+        self.velocity = [random.randint(4, 8), -random.randint(4, 8)]
+
+    def update(self):
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+
+        if self.rect.x <= 0 or self.rect.x >= SCREEN_WIDTH - 10:
+            self.velocity[0] = -self.velocity[0]
+
+        if self.rect.y <= 0:
+            self.velocity[1] = -self.velocity[1]
+
+        if self.rect.y >= SCREEN_HEIGHT:
+            self.velocity[1] = -self.velocity[1]  # In a real game, you'd handle losing a life here
+
+# Brick class
+class Brick(pygame.sprite.Sprite):
+    def __init__(self, color, x, y):
+        super().__init__()
+        self.image = pygame.Surface([50, 20])
+        self.image.fill(color)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+# Create sprite groups
+all_sprites = pygame.sprite.Group()
+bricks = pygame.sprite.Group()
+
+# Create paddle
+paddle = Paddle()
+all_sprites.add(paddle)
+
+# Create ball
+ball = Ball()
+all_sprites.add(ball)
+
+# Create bricks
+for row in range(5):
+    for col in range(16):
+        brick = Brick(GREEN, col * 50, row * 20)
+        all_sprites.add(brick)
+        bricks.add(brick)
+
+# Main game loop
+running = True
+clock = pygame.time.Clock()
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    all_sprites.update()
+
+    # Check for ball and paddle collision
+    if pygame.sprite.collide_rect(ball, paddle):
+        ball.velocity[1] = -ball.velocity[1]
+
+    # Check for ball and brick collision
+    brick_collisions = pygame.sprite.spritecollide(ball, bricks, True)
+    if brick_collisions:
+        ball.velocity[1] = -ball.velocity[1]
+
+    # Clear the screen
+    screen.fill(BLACK)
+
+    # Draw all sprites
+    all_sprites.draw(screen)
+
+    # Update the screen
+    pygame.display.flip()
+
+    # Cap the frame rate
+    clock.tick(60)
+
+pygame.quit()
